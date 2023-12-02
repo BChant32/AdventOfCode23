@@ -9,9 +9,12 @@ internal class Program
         foreach (string line in lines)
         {
             Game lineGame = Game.ReadGame(line);
-            bool isPossible = lineGame.PossibleWith(12, 13, 14);
-            Console.WriteLine($"{(isPossible ? "T" : "F")} Game {lineGame.ID}:{String.Join(';',lineGame.RGBs)}");
-            if (isPossible) sum += lineGame.ID;
+            //bool isPossible = lineGame.PossibleWith(12, 13, 14);
+            Console.WriteLine($"Game {lineGame.ID}:{String.Join(';',lineGame.RGBs)}");
+            //if (isPossible) sum += lineGame.ID;
+            (int, int, int) minset = lineGame.MinSet;
+            sum += minset.Item1 * minset.Item2 * minset.Item3;
+            if (sum > 1e9) throw new Exception("Getting too large for Int32");
         }
         Console.WriteLine("FINAL SUM: " + sum);
     }
@@ -21,6 +24,12 @@ public class Game
 {
     public int ID { get; set; }
     public List<(int, int, int)> RGBs { get; set; }
+    public (int, int, int) MinSet
+    {
+        get => (RGBs.Select(rgb => rgb.Item1).Max(),
+            RGBs.Select(rgb => rgb.Item2).Max(),
+            RGBs.Select(rgb => rgb.Item3).Max());
+    }
 
     public Game(int id)
     {
