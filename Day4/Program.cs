@@ -5,14 +5,18 @@ internal class Program
     private static void Main(string[] args)
     {
         string[] lines = File.ReadAllLines("day4_input.txt");
-        int sum = 0;
-        foreach (string line in lines)
+        int[] numCopies = new int[lines.Length];
+        Array.Fill(numCopies, 1);
+        for (int i = 0; i < lines.Length; i++)
         {
-            int score = scoreLine(line);
+            int score = scoreLine(lines[i]);
             Console.WriteLine(score);
-            sum += score;
+            for (int j = 1; j <= score; j++)
+            {
+                numCopies[i + j] += numCopies[i];
+            }
         }
-        Console.WriteLine("SUM: " + sum);
+        Console.WriteLine("SUM: " + numCopies.Sum());
     }
 
     private static int scoreLine(string line)
@@ -20,7 +24,7 @@ internal class Program
         string[] halfs = line.Split(':')[1].Split('|');
         List<int> winningList = Regex.Split(halfs[0].Trim(), @"\s+").Select(s => Int32.Parse(s)).ToList();
         List<int> playersList = Regex.Split(halfs[1].Trim(), @"\s+").Select(s => Int32.Parse(s)).ToList();
-        int power = winningList.Count(i => playersList.Contains(i));
-        return power == 0 ? 0 : (int)Math.Round(Math.Pow(2, power - 1));
+        return winningList.Count(i => playersList.Contains(i));
+        //return power == 0 ? 0 : (int)Math.Round(Math.Pow(2, power - 1));
     }
 }
