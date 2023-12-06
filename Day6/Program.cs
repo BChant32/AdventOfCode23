@@ -13,15 +13,23 @@
         (97, 1505),
         (90, 1100),
     };
+    private static List<(int, int)> test2 = new List<(int, int)>()
+    {
+        (71530, 940200),
+    };
+    private static List<(int, long)> input2 = new List<(int, long)>()
+    {
+        (40929790, 215106415051100),
+    };
     private static void Main(string[] args)
     {
-        long product = 1;
-        foreach ((int time, int recordDistance) in input)
+        foreach ((int time, long recordDistance) in input2)
         {
-            int numberFaster = Enumerable.Range(1, time - 1).Count(i => (time - i) * i > recordDistance);
-            Console.WriteLine(numberFaster);
-            product *= numberFaster;
+            double delta = Math.Sqrt((double)time * (double)time - 4 * (double)recordDistance);
+            //int numberFaster = Enumerable.Range(1, time - 1).Count(i => (time - i) * i > recordDistance);
+            double root1 = time + delta / 2;
+            double root2 = time - delta / 2;
+            Console.WriteLine($"Root 1:{root1}, Root 2:{root2}, Number between:{(int)root1 - (int)root2}");
         }
-        Console.WriteLine("Product: " + product);
     }
 }
