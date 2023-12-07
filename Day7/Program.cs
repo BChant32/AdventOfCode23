@@ -53,11 +53,15 @@ public class Hand : IComparable<Hand>
     }
     private HandType getType()
     {
-        IGrouping<int, int>[] grouping = Cards.GroupBy(i => i)
+        IEnumerable<int> cardsNoJ = Cards.Where(c => c != 1);
+        IGrouping<int, int>[] grouping = cardsNoJ
+            .GroupBy(i => i)
             .OrderByDescending(g => g.Count())
             .ToArray();
+        if (grouping.Length == 0) return HandType.FiveKind; // All J
         int most = grouping[0].Count();
-        return most switch
+        int numJ = 5 - cardsNoJ.Count();
+        return (most + numJ) switch
         {
             5 => HandType.FiveKind,
             4 => HandType.FourKind,
@@ -89,7 +93,7 @@ public class Hand : IComparable<Hand>
             'A' => 14,
             'K' => 13,
             'Q' => 12,
-            'J' => 11,
+            'J' => 1,
             'T' => 10,
             _ => Int32.Parse(c.ToString()),
         };
@@ -99,7 +103,7 @@ public class Hand : IComparable<Hand>
             14 => 'A',
             13 => 'K',
             12 => 'Q',
-            11 => 'J',
+            1 => 'J',
             10 => 'T',
             _ => char.Parse(i.ToString()),
         };
