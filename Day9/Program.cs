@@ -25,6 +25,6 @@
         if (nextSequence.All(i => i == 0))
             return sequence[0];
         else
-            return sequence[^1] + makeNext(nextSequence);
+            return sequence[0] - makeNext(nextSequence);
     }
 }
