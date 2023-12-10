@@ -20,8 +20,12 @@
         int stepCount = 1;
         int iStep = xStart - 1, jStep = yStart;
         Direction comeFrom = Direction.D;
+        bool[,] visited = new bool[lines.Length, lines[0].Length];
+        visited[xStart, yStart] = true;
+        lines[xStart] = lines[xStart].Replace('S','|');
         while (!(iStep == xStart && jStep == yStart))
         {
+            visited[iStep, jStep] = true;
             Pipe pipeStep = pipeGrid[iStep, jStep];
             if (pipeStep.L && comeFrom != Direction.L)
             {
@@ -47,6 +51,43 @@
             stepCount++;
         }
         Console.WriteLine(stepCount / 2.0);
+
+        bool isIn(int i, int j)
+        {
+            int val = 0;
+            char open = '.';
+            for (int k = 0; k < j; k++)
+            {
+                if (!visited[i, k]) continue;
+
+                if (lines[i][k] == '|') val++;
+                else if (lines[i][k] == 'L') open = 'L';
+                else if (lines[i][k] == 'F') open = 'F';
+                else if (lines[i][k] == '7')
+                {
+                    if (open == 'L') val++;
+                    open = '.';
+                }
+                else if (lines[i][k] == 'J')
+                {
+                    if (open == 'F') val++;
+                    open = '.';
+                }
+            }
+            return val % 2 == 1;
+        }
+
+        int sum = 0;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Console.WriteLine(String.Join("", Enumerable.Range(0, lines[i].Length).Select(j => visited[i, j] ? lines[i][j] : isIn(i,j) ? 'X' : '.')));
+            for (int j = 0; j < lines[i].Length; j++)
+            {
+                if (!visited[i,j] && isIn(i,j))
+                    sum++;
+            }
+        }
+        Console.WriteLine(sum);
     }
 }
 
