@@ -20,7 +20,7 @@
                 for (int k = 0; k < galaxies.Count; k++)
                 {
                     if (galaxies[k].Item1 > i)
-                        galaxies[k] = (galaxies[k].Item1 + 1, galaxies[k].Item2);
+                        galaxies[k] = (galaxies[k].Item1 + 999999, galaxies[k].Item2);
                 }
             }
         }
@@ -31,19 +31,19 @@
                 for (int k = 0; k < galaxies.Count; k++)
                 {
                     if (galaxies[k].Item2 > i)
-                        galaxies[k] = (galaxies[k].Item1, galaxies[k].Item2 + 1);
+                        galaxies[k] = (galaxies[k].Item1, galaxies[k].Item2 + 999999);
                 }
             }
         }
 
-        List<int> lengths = new List<int>();
+        long sum = 0;
         for (int i = 0; i < galaxies.Count - 1; i++)
         {
             for (int j = i + 1; j < galaxies.Count; j++)
             {
-                lengths.Add(Math.Abs(galaxies[i].Item1 - galaxies[j].Item1) + Math.Abs(galaxies[i].Item2 - galaxies[j].Item2));
+                sum += Math.Abs(galaxies[i].Item1 - galaxies[j].Item1) + Math.Abs(galaxies[i].Item2 - galaxies[j].Item2);
             }
         }
-        Console.WriteLine(lengths.Sum());
+        Console.WriteLine(sum);
     }
 }
