@@ -9,19 +9,34 @@ internal class Program
         long sum = 0;
         foreach (string patternText in patternTexts)
         {
-            int reflection = FindHorizontalReflectionLine(patternText);
-            if (reflection < 0)
-            {
-                reflection = FindHorizontalReflectionLine(Transpose(patternText));
-            }
-            else reflection *= 100;
+            int reflection = FindValueWithSmudge(patternText);
             Console.WriteLine(reflection);
             sum += reflection;
         }
         Console.WriteLine("Sum " + sum);
     }
 
-    private static int FindHorizontalReflectionLine(string patternText)
+    private static int FindValueWithSmudge(string patternText)
+    {
+        int oldReflection = FindHorizontalReflectionLine(patternText);
+        bool oldIsHorizontal = oldReflection > 0;
+        if (!oldIsHorizontal) oldReflection = FindHorizontalReflectionLine(Transpose(patternText));
+
+        int reflection = -1;
+        string testPattern;
+        for (int i = 0; i < patternText.Length; i++)
+        {
+            if (patternText[i] != '#' && patternText[i] != '.') continue;
+            char c = patternText[i] == '#' ? '.' : '#';
+            testPattern = patternText.Substring(0,i) + c + patternText.Substring(i+1);
+            reflection = FindHorizontalReflectionLine(testPattern, oldIsHorizontal ? oldReflection : 0);
+            if (reflection > 0) return reflection * 100;
+            reflection = FindHorizontalReflectionLine(Transpose(testPattern), oldIsHorizontal ? 0 : oldReflection);
+            if (reflection > 0) return reflection;
+        }
+        throw new Exception("Unable to find any");
+    }
+    private static int FindHorizontalReflectionLine(string patternText, int ignore = 0)
     {
         string[] patternLines = patternText.Split("\r\n");
         for (int k = 1; k < patternLines.Length; k++)
@@ -35,7 +50,7 @@ internal class Program
                     break;
                 }
             }
-            if (allLinesMatch)
+            if (allLinesMatch && k != ignore)
                 return k;
         }
         return -1;
