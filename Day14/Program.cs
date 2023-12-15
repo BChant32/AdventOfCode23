@@ -40,13 +40,17 @@ internal class Program
         for (int k = 0; k < 1000000000; k++)
         {
             if (!cycles.ContainsKey(grid)) cycles.Add((int[,])grid.Clone(), k);
-            else k = 1000000000 - ((1000000000-k) % (k - cycles[grid]));
+            else
+            {
+                Console.WriteLine(k + " " + cycles[grid]);
+                k = 1000000000 - ((1000000000 - k) % (k - cycles[grid]));
+            }
             grid = CalculateRotation(grid, height, width, (pos) => (pos.Item1 - 1, pos.Item2));
             grid = CalculateRotation(grid, height, width, (pos) => (pos.Item1, pos.Item2 - 1));
             grid = CalculateRevRotation(grid, height, width, (pos) => (pos.Item1 + 1, pos.Item2));
             grid = CalculateRevRotation(grid, height, width, (pos) => (pos.Item1, pos.Item2 + 1));
         }
-        Print(grid, height, width);
+
         long sum = 0;
         for (int i = 0; i < height; i++)
         {
@@ -67,7 +71,7 @@ internal class Program
             {
                 if (grid[i, j] != 0) continue;
 
-                (int iPos, int jPos) = move((i,j));
+                (int iPos, int jPos) = move((i, j));
                 int iOld = i, jOld = j;
                 while (iPos >= 0 && iPos < height
                     && jPos >= 0 && jPos < width
@@ -91,7 +95,7 @@ internal class Program
             {
                 if (grid[i, j] != 0) continue;
 
-                (int iPos, int jPos) = move((i,j));
+                (int iPos, int jPos) = move((i, j));
                 int iOld = i, jOld = j;
                 while (iPos >= 0 && iPos < height
                     && jPos >= 0 && jPos < width
@@ -112,7 +116,7 @@ internal class Program
     {
         for (int i = 0; i < height; i++)
         {
-            Console.WriteLine(String.Join("", Enumerable.Range(0, width).Select(j => grid[i, j] == -1 ? "." : grid[i,j].ToString())));
+            Console.WriteLine(String.Join("", Enumerable.Range(0, width).Select(j => grid[i, j] == -1 ? "." : grid[i, j].ToString())));
         }
     }
 }
