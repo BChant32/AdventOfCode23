@@ -5,48 +5,23 @@ internal class Program
     private static void Main(string[] args)
     {
         string[] lines = File.ReadAllLines("day19_input.txt");
-        bool isHeader = true;
 
         List<Workflow> workflows = new();
-        List<Xmas> xmasList = new();
         foreach (string line in lines)
         {
-            if (String.IsNullOrEmpty(line))
-            {
-                isHeader = false;
-                continue;
-            }
+            if (String.IsNullOrEmpty(line)) break;
 
-            if (isHeader)
-                workflows.Add(Workflow.CreateFrom(line));
-            else
-                xmasList.Add(Xmas.CreateFrom(line));
+            workflows.Add(Workflow.CreateFrom(line));
         }
 
-        long sum = 0;
-        foreach (Xmas xmas in xmasList)
-        {
-            bool accepted = Workflow.Process(workflows, xmas);
-            if (accepted)
-                sum += xmas.x + xmas.m + xmas.a + xmas.s;
-        }
+        long sum = Workflow.Process(workflows, workflows.First(w => w.Name == "in"), new((1, 4001), (1, 4001), (1, 4001), (1, 4001)));
         Console.WriteLine(sum);
     }
 }
 
-public record Xmas(int x, int m, int a, int s)
+public record Xmas((int, int) x, (int, int) m, (int, int) a, (int, int) s)
 {
-    public static Xmas CreateFrom(string line)
-    {
-        Match match = Regex.Match(line, @"\{x=(\d+),m=(\d+),a=(\d+),s=(\d+)\}");
-        if (!match.Success) throw new Exception("");
-        return new(Int32.Parse(match.Groups[1].Value),
-            Int32.Parse(match.Groups[2].Value),
-            Int32.Parse(match.Groups[3].Value),
-            Int32.Parse(match.Groups[4].Value));
-    }
-
-    public int GetField(char c)
+    public (int, int) GetField(char c)
     {
         return c switch
         {
@@ -54,6 +29,23 @@ public record Xmas(int x, int m, int a, int s)
             'm' => m,
             'a' => a,
             's' => s,
+        };
+    }
+
+    public long Evaluate()
+        => (long)(x.Item2 - x.Item1)
+        * (long)(m.Item2 - m.Item1)
+        * (long)(a.Item2 - a.Item1)
+        * (long)(s.Item2 - s.Item1);
+
+    public static Xmas CreateFrom(Xmas xmas, char c, (int, int) field)
+    {
+        return c switch
+        {
+            'x' => new Xmas(field, xmas.m, xmas.a, xmas.s),
+            'm' => new Xmas(xmas.x, field, xmas.a, xmas.s),
+            'a' => new Xmas(xmas.x, xmas.m, field, xmas.s),
+            's' => new Xmas(xmas.x, xmas.m, xmas.a, field),
         };
     }
 };
@@ -80,26 +72,29 @@ public class Workflow
     }
 
 
-    public static bool Process(List<Workflow> workflows, Xmas xmas)
+    public static long Process(List<Workflow> workflows, Workflow workflow, Xmas xmas)
     {
-        Workflow curWorkflow = workflows.First(w => w.Name == "in");
-        int curRule = 0;
-        while (true)
+        long ProcessOutcome(Xmas xmasTrue, string outcome)
         {
-            (Check? check, string outcome) = curWorkflow.rules[curRule];
-            if (check is null
-                || check.Perform(xmas))
-            {
-                if (outcome == "A") return true;
-                else if (outcome == "R") return false;
-                else
-                {
-                    curWorkflow = workflows.First(w => w.Name == outcome);
-                    curRule = 0;
-                }
-            }
-            else curRule++;
+            if (outcome == "A") return xmasTrue.Evaluate();
+            else if (outcome == "R") return 0;
+            else return Workflow.Process(workflows, workflows.First(w => w.Name == outcome), xmasTrue);
         }
+
+        long sum = 0;
+        foreach ((Check? check, string outcome) in workflow.rules)
+        {
+            if (check is null)
+                sum += ProcessOutcome(xmas, outcome);
+            else
+            {
+                (Xmas? xmasTrue, Xmas? xmasFalse) = check.Perform(xmas);
+                if (xmasTrue is not null) sum += ProcessOutcome(xmasTrue, outcome);
+                if (xmasFalse is null) return sum;
+                xmas = xmasFalse;
+            }
+        }
+        return sum;
     }
 
     internal class Check
@@ -119,14 +114,25 @@ public class Workflow
             Threshold = threshold;
         }
 
-        internal bool Perform(Xmas xmas)
+        internal (Xmas?, Xmas?) Perform(Xmas xmas)
         {
-            int field = xmas.GetField(Field);
-            return Op switch
+            (int fieldMin, int fieldMax) = xmas.GetField(Field);
+            switch (Op)
             {
-                OpEnum.lt => field < Threshold,
-                OpEnum.gt => field > Threshold,
-                _ => throw new Exception(""),
+                case OpEnum.lt:
+                    {
+                        if (Threshold <= fieldMin) return (null, xmas);
+                        else if (Threshold >= fieldMax) return (xmas, null);
+                        else return (Xmas.CreateFrom(xmas, Field, (fieldMin, Threshold)), Xmas.CreateFrom(xmas, Field, (Threshold, fieldMax)));
+                    }
+                case OpEnum.gt:
+                    {
+                        if (Threshold >= fieldMax - 1) return (null, xmas);
+                        else if (Threshold < fieldMin) return (xmas, null);
+                        else return (Xmas.CreateFrom(xmas, Field, (Threshold + 1, fieldMax)), Xmas.CreateFrom(xmas, Field, (fieldMin, Threshold + 1)));
+                    }
+                default:
+                    throw new Exception("");
             };
         }
 
