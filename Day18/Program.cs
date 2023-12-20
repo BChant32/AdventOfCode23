@@ -1,38 +1,40 @@
-﻿internal class Program
+﻿using System.Text.RegularExpressions;
+
+internal class Program
 {
     private static void Main(string[] args)
     {
         string[] lines = File.ReadAllLines("day18_input.txt");
         int x1 = 0, y1 = 0;
         int x2 = 0, y2 = 0;
-        decimal area = 0;
-        int perimeter = 0;
+        double area = 0;
+        long perimeter = 0;
         foreach (string line in lines)
         {
-            string[] strs = line.Trim().Split(' ');
-            int len = Int32.Parse(strs[1]);
+            Match m = Regex.Match(line, @"\(#([a-f\d]{5})([a-f\d])\)");
+            int len = Convert.ToInt32(m.Groups[1].Value, 16);
             perimeter += len;
-            switch (strs[0])
+            switch (m.Groups[2].Value)
             {
-                case "U":
+                case "3":
                     {
                         x2 = x1;
                         y2 = y1 - len;
                         break;
                     }
-                case "D":
+                case "1":
                     {
                         x2 = x1;
                         y2 = y1 + len;
                         break;
                     }
-                case "L":
+                case "2":
                     {
                         x2 = x1 - len;
                         y2 = y1;
                         break;
                     }
-                case "R":
+                case "0":
                     {
                         x2 = x1 + len;
                         y2 = y1;
@@ -41,12 +43,12 @@
                 default:
                     throw new Exception("");
             }
-            decimal triangle = (x1 * y2 - x2 * y1) / 2.0m;
+            double triangle = (x1 * (double)y2 - x2 * (double)y1) / 2.0;
             Console.WriteLine(triangle);
             area += triangle;
             x1 = x2;
             y1 = y2;
         }
-        Console.WriteLine(area + " " + perimeter + " " + (area + perimeter/2 + 1));
+        Console.WriteLine(area + " " + perimeter + " " + (Math.Abs(area) + perimeter/2 + 1));
     }
 }
