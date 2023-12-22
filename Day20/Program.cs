@@ -35,10 +35,14 @@
             }
         }
 
-        for (int i = 0; i < 1000; i++)
+        int i = 0;
+        while (!Module.rxHit)
         {
+            i++;
+            if (i % 100000 == 0) Console.WriteLine(i);
             Module.LowCounter++;
             allModules.OfType<Broadcaster>().Single().Send(false);
+            if (Module.rxHit) Console.WriteLine("rx#: " + i);
         }
         
         Console.WriteLine($"Low:{Module.LowCounter} High:{Module.HighCounter}");
@@ -50,6 +54,7 @@ public abstract class Module
 {
     public static int LowCounter = 0;
     public static int HighCounter = 0;
+    public static bool rxHit = false;
 
     public string Name { get; set; }
     public List<Module> outputs = new();
@@ -57,9 +62,10 @@ public abstract class Module
     public abstract bool? Process(Module sender, bool signal);
     public void Send(bool signal)
     {
+        if (!signal && Name == "ls") rxHit = true;
         //Console.WriteLine(Name + ": " + (signal ? "high" : "low"));
         Dictionary<Module, bool> tick = new();
-        foreach (Module module in outputs) 
+        foreach (Module module in outputs)
         {
             if (signal) HighCounter++;
             else LowCounter++;
