@@ -14,32 +14,6 @@
         //Stack<(int, int)> topoOrder = topologicalOrder(graph);
         Console.WriteLine(longestPath(graph, new HashSet<(int, int)> { (startX, 0) }, (startX, 0), 0));
     }
-
-    private static Stack<(int, int)> topologicalOrder(Dictionary<(int, int), List<Walker>> graph)
-    {
-        Stack<(int, int)> stack = new();
-        Dictionary<(int, int), bool> visited = new();
-        foreach (var pos in graph.Keys)
-        {
-            visited.Add(pos, false);
-        }
-        foreach (var pos in visited.Keys)
-        {
-            if (!visited[pos])
-                topologicalRecursive(graph, visited, stack, pos);
-        }
-        return stack;
-    }
-    private static void topologicalRecursive(Dictionary<(int, int), List<Walker>> graph, Dictionary<(int, int), bool> visited, Stack<(int, int)> stack, (int, int) pos)
-    {
-        visited[pos] = true;
-        foreach (Walker walker in graph[pos])
-        {
-            if (!visited[pos])
-                topologicalRecursive(graph, visited, stack, (walker.x, walker.y));
-        }
-        stack.Push(pos);
-    }
     private static int longestPath(Dictionary<(int, int), List<Walker>> graph, HashSet<(int, int)> visited, (int, int) startPos, int dist)
     {
         if (startPos.Item2 == height - 1) return dist;
@@ -49,7 +23,7 @@
             (int, int) walkerPos = (walker.x, walker.y);
             if (visited.Contains(walkerPos)) continue;
             HashSet<(int, int)> optionVisited = new HashSet<(int, int)>() { walkerPos };
-            optionVisited.Union(visited);
+            optionVisited.UnionWith(visited);
             int optionDist = longestPath(graph, optionVisited, walkerPos, walker.dist + dist);
             if (optionDist > longest) longest = optionDist;
         }
@@ -84,12 +58,8 @@
     {
         return lines[y][x] switch
         {
-            '.' => new Walker(x, y, dir, dist),
             '#' => null,
-            '<' => dir == Dir.Left ?  new Walker(x, y, dir, dist) : null,
-            '>' => dir == Dir.Right ?  new Walker(x, y, dir, dist) : null,
-            '^' => dir == Dir.Up ?  new Walker(x, y, dir, dist) : null,
-            'v' => dir == Dir.Down ?  new Walker(x, y, dir, dist) : null,
+            _ => new Walker(x, y, dir, dist),
         };
     }
 
