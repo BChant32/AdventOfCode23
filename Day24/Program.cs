@@ -61,7 +61,9 @@ public class Hail
     {
         if (!timeAt(Pos.X, other.Pos.X, Vel.X, other.Vel.X, out double timeX)) return false;
         if (!timeAt(Pos.Y, other.Pos.Y, Vel.Y, other.Vel.Y, out double timeY)) return false;
+        if (!timeAt(Pos.Z, other.Pos.Z, Vel.Z, other.Vel.Z, out double timeZ)) return false;
         return timeX == timeY
+            && timeY == timeZ
             && timeX > 0;
     }
     private bool timeAt(long x1, long x2, long v1, long v2, out double time)
