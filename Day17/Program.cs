@@ -1,137 +1,79 @@
-﻿internal class Program
+﻿using static Program;
+
+internal class Program
 {
-    private static int[,] grid;
+    private static int[,] weightingGrid;
+    private static int[,] evalGrid;
+
+    public enum Direction
+    {
+        None, Up, Down, Left, Right,
+    }
     private static void Main(string[] args)
     {
-        string[] lines = File.ReadAllLines("day17_input.txt");
+        string[] lines = File.ReadAllLines("day17_test.txt");
         int height = lines.Length, width = lines[0].Length;
-        grid = new int[height, width];
+        weightingGrid = new int[height, width];
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
-                grid[i,j] = Int32.Parse(lines[i][j].ToString());
+                weightingGrid[i, j] = Int32.Parse(lines[i][j].ToString());
             }
         }
 
-        List<Path> paths = new() { new Path(new(),Direction.Left,0,0,0,0) };
-        void writeState()
+        (Direction, int, int)[] directions = [
+            (Direction.Up, -1, 0),
+            (Direction.Down, 1, 0),
+            (Direction.Left, 0, -1),
+            (Direction.Right, 0, 1),
+        ];
+        Dictionary<(int, int), (int, bool, Direction)> evaled = new()
         {
-            Console.Clear();
-            for (int i = 0; i < height; i++)
-            {
-                for (int j = 0; j < width; j++)
-                {
-                    IOrderedEnumerable<Path> matchingPaths = paths.Where(p => p.evaluated && p.iCur == i && p.jCur == j).Order();
-                    if (matchingPaths.Any())
-                        Console.Write(matchingPaths.First().cost.ToString().PadLeft(3, ' ') + "|");
-                    else Console.Write("   |");
-                }
-                Console.WriteLine();
-            }
-        }
-
-        int counter = 0;
-        while (paths.Any(p => !p.evaluated))
-        {
-            counter++;
-            paths.Sort();
-            Path lowestPath = paths.First(p => !p.evaluated);
-
-            lowestPath.evaluated = true;
-            List<Direction> allowedDirections = new() { Direction.Left, Direction.Right, Direction.Up, Direction.Down };
-            if (lowestPath.steps.Count > 0)
-            {
-                allowedDirections.Remove(lowestPath.lastDir switch
-                {
-                    Direction.Left => Direction.Right,
-                    Direction.Right => Direction.Left,
-                    Direction.Up => Direction.Down,
-                    Direction.Down => Direction.Up,
-                });
-                if (lowestPath.numInSameDir == 3)
-                    allowedDirections.Remove(lowestPath.lastDir);
-            }
-            if (lowestPath.iCur == 0)
-                allowedDirections.Remove(Direction.Up);
-            if (lowestPath.iCur == height - 1)
-                allowedDirections.Remove(Direction.Down);
-            if (lowestPath.jCur == 0)
-                allowedDirections.Remove(Direction.Left);
-            if (lowestPath.jCur == width - 1)
-                allowedDirections.Remove(Direction.Right);
-
-            foreach (Direction dir in allowedDirections)
-            {
-                (int iNext, int jNext) = Move(dir, lowestPath.iCur, lowestPath.jCur);
-
-                int newCost = lowestPath.cost + grid[iNext, jNext];
-                paths.Add(new Path(lowestPath.steps.Append(dir).ToList(), dir, lowestPath.lastDir == dir ? lowestPath.numInSameDir + 1 : 1, newCost, iNext, jNext));
-
-                int numSteps = 4;
-                foreach (Path p in paths.Where(p => p.iCur == iNext && p.jCur == jNext).Order())
-                {
-                    if (p.lastDir != dir) continue;
-                    if (p.numInSameDir < numSteps)
-                        numSteps = p.numInSameDir;
-                    else
-                        paths.Remove(p);
-                }
-            }
-
-            //if (counter % 1000 == 0) writeState();
-        }
-        writeState();
-    }
-
-    public static (int, int) Move(Direction dir, int i, int j)
-    {
-        return dir switch
-        {
-            Direction.Left => (i, j - 1),
-            Direction.Right => (i, j + 1),
-            Direction.Up => (i - 1, j),
-            Direction.Down => (i + 1, j),
+            { (0, 0), (0, false, Direction.None) }
         };
-    }
-}
+        for (int k = 0; k < width * height; k++)
+        {
+            int lowestUndecided = evaled.Values.Where(p => !p.Item2).OrderBy(p => p.Item1).First().Item1;
+            KeyValuePair<(int, int), (int, bool, Direction)>[] toBeEvaled = evaled.Where(kvp => !kvp.Value.Item2 && lowestUndecided == kvp.Value.Item1).ToArray();
+            if (toBeEvaled.Any(kvp => kvp.Key == (height - 1, width - 1))) break;
+            foreach ((Direction dir, int iDir, int jDir) in directions)
+            {
+                if (dir == toBeEvaled[0].Value.Item3) continue;
+                int evalPos = lowestUndecided;
+                for (int n = 1; n <= 3; n++)
+                {
+                    int iPos = toBeEvaled[0].Key.Item1 + n * iDir;
+                    int jPos = toBeEvaled[0].Key.Item2 + n * jDir;
+                    if (iPos < 0 || jPos < 0 || iPos >= height || jPos >= width) continue;
+                    evalPos += weightingGrid[iPos, jPos];
+                    if (evaled.ContainsKey((iPos, jPos)))
+                    {
+                        if (evaled[(iPos, jPos)].Item2) continue;
+                        else if (evaled[(iPos, jPos)].Item1 < evalPos) continue;
+                        else if (evaled[(iPos, jPos)].Item1 == evalPos)
+                            evaled[(iPos, jPos)] = (evalPos, false, Direction.None);
+                        else
+                            evaled[(iPos, jPos)] = (evalPos, false, dir);
+                    }
+                    else
+                        evaled.Add((iPos, jPos), (evalPos, false, dir));
+                }
+            }
+            evaled[toBeEvaled[0].Key] = (lowestUndecided, true, toBeEvaled[0].Value.Item3);
+        }
 
-public enum Direction
-{
-    Left,
-    Right,
-    Up,
-    Down,
-}
-public class Path : IComparable<Path>
-{
-    public bool evaluated = false;
-    public List<Direction> steps = new();
-    public Direction lastDir;
-    public int numInSameDir = 0;
-    public int cost = 0;
-    public int iCur = 0;
-    public int jCur = 0;
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++)
+            {
+                if (evaled.ContainsKey((i, j)))
+                    Console.Write(evaled[(i, j)].Item1.ToString().PadLeft(3) + '|');
+                else Console.Write("   |");
+            }
+            Console.WriteLine();
+        }
 
-    public Path(List<Direction> steps, Direction lastDir, int numInSameDir, int cost, int iCur, int jCur)
-    {
-        this.steps = steps;
-        this.lastDir = lastDir;
-        this.numInSameDir = numInSameDir;
-        this.cost = cost;
-        this.iCur = iCur;
-        this.jCur = jCur;
-    }
-
-    public int CompareTo(Path? other)
-    {
-        int comp = cost.CompareTo(other.cost);
-        if (comp != 0) return comp;
-        return numInSameDir.CompareTo(other.numInSameDir);
-    }
-
-    public override string ToString()
-    {
-        return $"({iCur},{jCur}) c{cost} n{numInSameDir}";
+        Console.WriteLine(evaled[(height - 1, width - 1)]);
     }
 }
