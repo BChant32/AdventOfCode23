@@ -1,29 +1,70 @@
-﻿using System.Collections.Generic;
-
-internal class Program
+﻿internal class Program
 {
     private static void Main(string[] args)
     {
         string[] lines = File.ReadAllLines("day25_input.txt");
         Dictionary<string, HashSet<string>> graph = new();
         makeGraph(graph, lines);
-        List<(string, string)> edges = getAllEdges(graph);
-        for (int i = 0; i < edges.Count; i++)
+        List<string> nodes = graph.Keys.ToList();
+        string nodeA = nodes[0];
+        int count = 0;
+        foreach (string nodeB in nodes.Skip(1))
         {
-            for (int j = 0; j < i; j++)
+            Dictionary<string, HashSet<string>> graphCopy = graph.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToHashSet());
+            for (int i = 0; i < 3; i++)
             {
-                for (int k = 0; k < j; k++)
+                List<string> path = findPath(graphCopy, nodeA, nodeB);
+                deletePath(graphCopy, path);
+            }
+            List<string> potentialPath = findPath(graphCopy, nodeA, nodeB);
+            if (!potentialPath.Any()) count++;
+        }
+        Console.WriteLine(count);
+    }
+
+    private static void deletePath(Dictionary<string, HashSet<string>> graph, List<string> path)
+    {
+        for (int i = 1; i < path.Count; i++)
+        {
+            string nodeA = path[i-1];
+            string nodeB = path[i];
+            graph[nodeA].Remove(nodeB);
+            graph[nodeB].Remove(nodeA);
+        }
+    }
+
+    private static List<string> findPath(Dictionary<string, HashSet<string>> graph, string nodeA, string nodeB)
+    {
+        HashSet<List<string>> allPaths = new() { new List<string> { nodeA } };
+        HashSet<string> visitedNodes = new() { nodeA };
+        HashSet<string> options;
+        List<string> newPath;
+        while (allPaths.Any())
+        {
+            HashSet<string> lastNodes = visitedNodes.ToHashSet();
+            foreach (List<string> path in allPaths.ToArray())
+            {
+                allPaths.Remove(path);
+                options = graph[path.Last()];
+                foreach (string option in options)
                 {
-                    int num = cut3Works(graph, edges[i], edges[j], edges[k]);
-                    if (num < graph.Count)
+                    if (!path.Contains(option))
                     {
-                        Console.WriteLine(num + " " + (graph.Count - num));
-                        goto breakpoint;
+                        visitedNodes.Add(option);
+                        newPath = path.Append(option).ToList();
+                        if (option == nodeB)
+                            return newPath;
+                        allPaths.Add(newPath);
                     }
                 }
             }
+            if (lastNodes.SetEquals(visitedNodes))
+            {
+                Console.WriteLine(lastNodes.Count); // 712
+                break;
+            }
         }
-    breakpoint:;
+        return new();
     }
 
     private static int cut3Works(Dictionary<string, HashSet<string>> graph, (string, string) edge1, (string, string) edge2, (string, string) edge3)
